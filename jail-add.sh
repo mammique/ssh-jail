@@ -6,7 +6,7 @@
 # upon normal SSH installation without altering it.
 #
 # Then easily add/remove SSH jail accounts, allowing users to Rsync/sFTP
-# in their /home/dir and execute minimal commands (GNU-like commands via Toybox).
+# in their `$JAIL/home/dir` and execute minimal commands (GNU-like commands via Toybox).
 #
 # Commands:
 #
