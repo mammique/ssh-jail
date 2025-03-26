@@ -15,6 +15,7 @@ read -p "Uninstall Jail SSH? [y/N] " confirm
 rm $CONFIG_FILE
 rm $CONFIG_FILE_SSH
 delgroup $JAIL_GROUP
+systemctl restart ssh
 
 echo
 echo "Done."
