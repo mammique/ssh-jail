@@ -20,11 +20,16 @@ KEYS_PATH='/etc/ssh/jail_keys/'
 
 echo
 
+# Select ToyBox or BusyBox.
+apt-cache show toybox >/dev/null 2>&1 && CMDBIN="toybox" || CMDBIN="busybox"
+
 install_jail() {
 
 	echo "Jail SSH not installed…"
 	echo
-	apt install --no-upgrade openssh-server toybox openssh-sftp-server rsync
+	CMDBIN_PKG=$CMDBIN
+	[ "$CMDBIN" = 'busybox' ] && dpkg -l busybox-static &>/dev/null && CMDBIN_PKG="busybox-static"
+	apt install --no-upgrade openssh-server openssh-sftp-server rsync $CMDBIN_PKG
 	echo
 	echo "Creating configuration file…"
 	echo
@@ -72,8 +77,8 @@ echo $KEY_PUB >> "$KEYS_PATH/$USER.pub"
 
 # Importing minimal binaries and libraries.
 # https://tools.deltazero.cz/server/setup.chroot.for.rsync.sh
-copies=$((ldd `which sh`; ldd `which bash`; ldd `which rsync` ; ldd `which toybox`;) | awk '/\// { print ($3 ? $3 : $1) }' | sort | uniq)
-copies+=" $(which sh) $(which bash) $(which rsync) $(which toybox) /usr/lib/openssh/sftp-server"
+copies=$((ldd `which sh`; ldd `which bash`; ldd `which rsync` ; ldd "`which $CMDBIN`" 2>/dev/null;) | awk '/\// { print ($3 ? $3 : $1) }' | sort | uniq)
+copies+=" $(which sh) $(which bash) $(which rsync) $(which $CMDBIN) /usr/lib/openssh/sftp-server"
 for f in $copies; do
   d=$(dirname ${f})
   [[ ! -d ".$d" ]] && sudo mkdir -p ".$d"
@@ -81,7 +86,15 @@ for f in $copies; do
 done
 mkdir -p $CHROOT_PATH/bin
 ln -s /usr/bin/bash $CHROOT_PATH/bin/
-for cmd in $(toybox); do ln -s /usr/bin/toybox usr/bin/$cmd; done
+if [ $CMDBIN == 'toybox' ]; then
+	for cmd in $(toybox); do ln -s /usr/bin/toybox usr/bin/$cmd; done
+else
+	for cmd in $(busybox --list); do
+		if [ ! -f "usr/bin/$cmd" ]; then
+			ln -s /usr/bin/busybox usr/bin/$cmd;
+		fi
+	done
+fi
 
 # Creating devices.
 mkdir -p $CHROOT_PATH/dev
