@@ -55,7 +55,7 @@ EOF
 	echo "Creatin directories $JAILS_PATH and $KEYS_PATH…"
 	mkdir -p $JAILS_PATH
 	mkdir -p $KEYS_PATH 
-	addgroup jail
+	addgroup $JAIL_GROUP
 }
 
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -72,7 +72,7 @@ CHROOT_PATH=$JAILS_PATH/$USER
 mkdir -p $CHROOT_PATH
 cd $CHROOT_PATH
 useradd --no-create-home -d "$CHROOT_PATH" -s /bin/bash $USER
-addgroup $USER $JAIL_GROUP
+usermod -aG $JAIL_GROUP $USER
 echo $KEY_PUB >> "$KEYS_PATH/$USER.pub"
 
 # Importing minimal binaries and libraries.
@@ -81,8 +81,8 @@ copies=$((ldd `which sh`; ldd `which bash`; ldd `which rsync` ; ldd "`which $CMD
 copies+=" $(which sh) $(which bash) $(which rsync) $(which $CMDBIN) /usr/lib/openssh/sftp-server"
 for f in $copies; do
   d=$(dirname ${f})
-  [[ ! -d ".$d" ]] && sudo mkdir -p ".$d"
-  [[ ! -f ".$f" ]] && sudo cp "$f" ".$f"
+  [[ ! -d ".$d" ]] && mkdir -p ".$d"
+  [[ ! -f ".$f" ]] && cp "$f" ".$f"
 done
 mkdir -p $CHROOT_PATH/bin
 ln -s /usr/bin/bash $CHROOT_PATH/bin/
@@ -100,11 +100,11 @@ fi
 mkdir -p $CHROOT_PATH/dev
 (
     cd $CHROOT_PATH/dev || exit 1
-        sudo mknod -m 666 null c 1 3
-        sudo mknod -m 666 zero c 1 5
-        sudo mknod -m 666 random c 1 8
-        sudo mknod -m 666 urandom c 1 9
-        sudo mknod -m 666 tty c 5 0
+        mknod -m 666 null c 1 3
+        mknod -m 666 zero c 1 5
+        mknod -m 666 random c 1 8
+        mknod -m 666 urandom c 1 9
+        mknod -m 666 tty c 5 0
 )
 # echo "Devices created in ${CHROOT_PATH}/dev :"
 # ls -l "${CHROOT_PATH}/dev" | grep -E 'null|zero|random|urandom|tty'
