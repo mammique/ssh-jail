@@ -28,8 +28,14 @@ install_jail() {
 	echo "Jail SSH not installed…"
 	echo
 	CMDBIN_PKG=$CMDBIN
-	[ "$CMDBIN" = 'busybox' ] && dpkg -l busybox-static &>/dev/null && CMDBIN_PKG="busybox-static"
-	apt install --no-upgrade openssh-server openssh-sftp-server rsync $CMDBIN_PKG
+	if [ "$CMDBIN" = 'busybox' ]; then
+    		if dpkg -l busybox busybox-static 2>/dev/null | grep -q '^ii'; then
+        		CMDBIN_PKG=$(dpkg -l busybox busybox-static 2>/dev/null | awk '/^ii/{print $2; exit}')
+    		else
+	        	CMDBIN_PKG="busybox-static"
+	    	fi
+	fi
+ 	apt install --no-upgrade openssh-server openssh-sftp-server rsync $CMDBIN_PKG
 	echo
 	echo "Creating configuration file…"
 	echo
